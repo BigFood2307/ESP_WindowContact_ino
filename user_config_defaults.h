@@ -36,6 +36,11 @@
 #define CONFIG_CONTACT_MSG_OPEN   "OPEN"
 #define CONFIG_CONTACT_MSG_CLOSED "CLOSED"
 
+//If the following line is defined, the code assumes you are using an NC reed contact (Circuit closed, when window closed)
+//To use an NO Type, undefine it in the overwrite. 
+//NC is more secure, as cutting the cable will be registered as opening. NO usually uses less energy, as no current is flowing when the window is closed
+#define CONFIG_CONTACT_NC
+
 //---OVERWRITE------------------------------
 
 #ifdef USE_CONFIG_OVERWRITE

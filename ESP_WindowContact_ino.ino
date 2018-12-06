@@ -92,11 +92,19 @@ String sFormatMessage()
 {
   String durationStr(millis()-ulStartupTime);
 
+  #ifdef CONFIG_CONTACT_NC
   String contactStr = CONFIG_CONTACT_MSG_OPEN;
   if(contact)
   {
     contactStr = CONFIG_CONTACT_MSG_CLOSED;
   }
+  #else
+  String contactStr = CONFIG_CONTACT_MSG_CLOSED;
+  if(contact)
+  {
+    contactStr = CONFIG_CONTACT_MSG_OPEN;
+  }
+  #endif
 
   float voltage = ESP.getVcc();
 
