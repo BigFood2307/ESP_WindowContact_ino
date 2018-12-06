@@ -18,9 +18,11 @@ MQTT *myMqtt;
 
 byte contact = 0;
 
-unsigned long milli;
-
+unsigned long ulStartupTime;
 unsigned long startTime = 0;
+
+void vConnectWifi();
+void vConnectMqtt();
   
 ADC_MODE(ADC_VCC);
 
@@ -31,7 +33,7 @@ void setup() {
   DEBUG_L1(Serial.println());
   DEBUG_L1(Serial.println("Startup..."));
 
-  milli = millis();
+  ulStartupTime = millis();
 
   String lwtTopic(CONFIG_BASE_TOPIC);
   lwtTopic.concat(CONFIG_LWT_TOPIC);
@@ -41,6 +43,22 @@ void setup() {
   pinMode(CONTACT_PIN, INPUT);
   contact = !digitalRead(CONTACT_PIN);
   
+  vConnectWifi();
+  vConnectMqtt();  
+}
+
+void loop() {
+  // put your main code here, to run repeatedly:
+  if(millis()-startTime > CONFIG_MQTT_TO)
+  {
+    DEBUG_L1(Serial.println("Going to deepsleep."));
+    ESP.deepSleep(0);
+  }
+  yield();
+}
+
+void vConnectWifi()
+{
   DEBUG_L1(Serial.println("Connecting WiFi..."));
 
   WiFi.begin(WIFI_SSID, WIFI_PASS);
@@ -58,7 +76,10 @@ void setup() {
   }
   DEBUG_L4(Serial.println());
   DEBUG_L1(Serial.println("WiFi connected!"));
-  
+}
+
+void vConnectMqtt()
+{
   DEBUG_L1(Serial.println("Connecting MQTT..."));
   myMqtt->onConnected(myConnectedCb);
   myMqtt->onDisconnected(myDisconnectedCb);
@@ -67,24 +88,12 @@ void setup() {
   myMqtt->setUserPwd(CONFIG_MQTT_LOGIN, CONFIG_MQTT_PASS);
   startTime = millis();
   myMqtt->connect();
-  
 }
 
-void loop() {
-  // put your main code here, to run repeatedly:
-  yield();
-  if(millis()-startTime > CONFIG_MQTT_TO)
-  {
-    DEBUG_L1(Serial.println("Going to deepsleep."));
-    ESP.deepSleep(0);
-  }
-}
-
-void myConnectedCb()
-{  
-  DEBUG_L1(Serial.println("Connected MQTT"));
+String sFormatMessage()
+{
   String contactStr = "OPEN";
-  String durationStr(millis()-milli);
+  String durationStr(millis()-ulStartupTime);
 
   if(contact)
   {
@@ -104,6 +113,15 @@ void myConnectedCb()
   message += ",\"SW-Version\":";
   message += SW_VERSION;
   message += "}";
+
+  return message;
+}
+
+void myConnectedCb()
+{  
+  DEBUG_L1(Serial.println("Connected MQTT"));
+
+  String message = sFormatMessage();
   
   String contactTopic(CONFIG_BASE_TOPIC);
   contactTopic.concat(CONFIG_CONTACT_TOPIC);
