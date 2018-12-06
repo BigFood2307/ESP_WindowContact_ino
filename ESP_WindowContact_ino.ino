@@ -59,7 +59,7 @@ void vConnectWifi()
 {
   DEBUG_L1(Serial.println("Connecting WiFi..."));
 
-  WiFi.begin(WIFI_SSID, WIFI_PASS);
+  WiFi.begin(CONFIG_WIFI_SSID, CONFIG_WIFI_PASS);
   startTime = millis();
   while (WiFi.status() != WL_CONNECTED) 
   {  
