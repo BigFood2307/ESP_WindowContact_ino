@@ -30,6 +30,14 @@
 #define CONFIG_CONTACT_TOPIC    "CONTACT"
 #define CONFIG_LWT_MSG          "Offline"
 
+//---CONTACT------------------------------
+
+#define CONFIG_CONTACT_PIN        3
+#define CONFIG_CONTACT_MSG_OPEN   "OPEN"
+#define CONFIG_CONTACT_MSG_CLOSED "CLOSED"
+
+//---OVERWRITE------------------------------
+
 #ifdef USE_CONFIG_OVERWRITE
 #include "user_config_overwrite.h"
 #endif

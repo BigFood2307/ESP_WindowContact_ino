@@ -12,8 +12,6 @@ void myPublishedCb();
 void myDisconnectedCb();
 void myConnectedCb();
 
-#define CONTACT_PIN 3
-
 MQTT *myMqtt;
 
 byte contact = 0;
@@ -40,8 +38,8 @@ void setup() {
   
   myMqtt = new MQTT(CONFIG_CLIENT_ID, CONFIG_MQTT_SERVER, CONFIG_MQTT_PORT, lwtTopic.c_str(), 0, true, CONFIG_LWT_MSG);
   
-  pinMode(CONTACT_PIN, INPUT);
-  contact = !digitalRead(CONTACT_PIN);
+  pinMode(CONFIG_CONTACT_PIN, INPUT);
+  contact = !digitalRead(CONFIG_CONTACT_PIN);
   
   vConnectWifi();
   vConnectMqtt();  
@@ -92,12 +90,12 @@ void vConnectMqtt()
 
 String sFormatMessage()
 {
-  String contactStr = "OPEN";
   String durationStr(millis()-ulStartupTime);
 
+  String contactStr = CONFIG_CONTACT_MSG_OPEN;
   if(contact)
   {
-    contactStr = "CLOSED";
+    contactStr = CONFIG_CONTACT_MSG_CLOSED;
   }
 
   float voltage = ESP.getVcc();
