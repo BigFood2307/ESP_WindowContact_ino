@@ -2,8 +2,6 @@
 #ifndef __USER_CONFIG_H
 #define __USER_CONFIG_H
 
-#include "credentials.h"
-
 //---OVERWRITE------------------------------
 
 //Uncomment to use overwrite file
@@ -11,16 +9,16 @@
 
 //---WIFI-----------------------------------
 
-#define CONFIG_WIFI_SSID    WIFI_SSID
-#define CONFIG_WIFI_PASS    WIFI_PASS
+#define CONFIG_WIFI_SSID    "SSID"
+#define CONFIG_WIFI_PASS    "PASSWORD"
 #define CONFIG_WIFI_TO      10000
 
 //---MQTT----------------------------------
 
-#define CONFIG_MQTT_SERVER  MQTT_SERVER
-#define CONFIG_MQTT_PORT    MQTT_PORT
-#define CONFIG_MQTT_LOGIN   MQTT_LOGIN
-#define CONFIG_MQTT_PASS    MQTT_PASS
+#define CONFIG_MQTT_SERVER  "openhabianpi"
+#define CONFIG_MQTT_PORT    1887
+#define CONFIG_MQTT_LOGIN   "opehabian"
+#define CONFIG_MQTT_PASS    "PASSWORD"
 #define CONFIG_MQTT_TO      5000
 
 #define CONFIG_CLIENT_ID      "BM_TE_Contact1"
