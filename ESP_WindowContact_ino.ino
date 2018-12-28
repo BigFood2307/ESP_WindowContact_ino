@@ -58,7 +58,9 @@ void loop() {
 void vConnectWifi()
 {
   DEBUG_L1(Serial.println("Connecting WiFi..."));
-  WiFi.hostname(CONFIG_CLIENT_ID);
+  
+  WiFi.hostname(CONFIG_CLIENT_ID);  
+  WiFi.mode(WIFI_STA);
   WiFi.begin(CONFIG_WIFI_SSID, CONFIG_WIFI_PASS);
   ulWaitStartTime = millis();
   while (WiFi.status() != WL_CONNECTED) 
