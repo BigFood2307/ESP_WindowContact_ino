@@ -17,7 +17,7 @@
 
 #define CONFIG_MQTT_SERVER  "openhabianpi"
 #define CONFIG_MQTT_PORT    1887
-#define CONFIG_MQTT_LOGIN   "opehabian"
+#define CONFIG_MQTT_LOGIN   "openhabian"
 #define CONFIG_MQTT_PASS    "PASSWORD"
 #define CONFIG_MQTT_TO      5000
 
