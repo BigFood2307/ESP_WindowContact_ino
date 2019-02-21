@@ -7,6 +7,10 @@
 //Uncomment to use overwrite file
 //#define USE_CONFIG_OVERWRITE
 
+//---CONFIG_HOLDER--------------------------
+
+#define CONFIG_HOLDER 0x1234
+
 //---WIFI-----------------------------------
 
 #define CONFIG_WIFI_SSID    "SSID"

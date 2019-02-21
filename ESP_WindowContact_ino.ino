@@ -3,6 +3,7 @@
 
 #include "user_config_defaults.h"
 #include "version.h"
+#include "permanent_config.h"
 
 #define DEBUG_LEVEL 0
 #include "debugtool.h"
@@ -13,6 +14,27 @@ void vDisconnectedCb();
 void vConnectedCb();
 
 MQTT *oMqtt;
+
+struct
+{
+  char acWifiSSID[31] = CONFIG_WIFI_SSID;
+  char acWifiPassword[31] = CONFIG_WIFI_PASS;
+  unsigned int uiWifiTimeout = CONFIG_WIFI_TO;
+
+  char acMqttServer[31] = CONFIG_MQTT_SERVER;
+  unsigned int uiMqttPort = CONFIG_MQTT_PORT;
+  char acMqttLogin[21] = CONFIG_MQTT_LOGIN;
+  char acMqttPassword[31] = CONFIG_MQTT_PASS;
+  unsigned int uiMqttTimeout = CONFIG_MQTT_TO;
+  char acMqttClientId[31] = CONFIG_CLIENT_ID;
+  char acMqttBaseTopic[31] = CONFIG_BASE_TOPIC;
+  char acMqttLastWillTopic[11] = CONFIG_LWT_TOPIC;
+  char acMqttContactTopic[11] = CONFIG_CONTACT_TOPIC;
+  char acMqttLastWillMessage[21] = CONFIG_LWT_MSG;
+  unsigned char ucContactPin = CONFIG_CONTACT_PIN;
+  char acContactMessageOpen[11] = CONFIG_CONTACT_MSG_OPEN;
+  char acContactMessageClosed[11] = CONFIG_CONTACT_MSG_CLOSED;
+} oConfigData;
 
 byte bContact = 0;
 
@@ -33,13 +55,16 @@ void setup() {
 
   ulStartupTime = millis();
 
-  String sLwtTopic(CONFIG_BASE_TOPIC);
-  sLwtTopic.concat(CONFIG_LWT_TOPIC);
+  vInitPermanentConfig(CONFIG_HOLDER, sizeof(oConfigData));
+  vLoadConfig((void *)(&oConfigData));
+
+  String sLwtTopic(oConfigData.acMqttBaseTopic);
+  sLwtTopic.concat(oConfigData.acMqttLastWillTopic);
   
-  oMqtt = new MQTT(CONFIG_CLIENT_ID, CONFIG_MQTT_SERVER, CONFIG_MQTT_PORT, sLwtTopic.c_str(), 0, true, CONFIG_LWT_MSG);
+  oMqtt = new MQTT(oConfigData.acMqttClientId, oConfigData.acMqttServer, oConfigData.uiMqttPort, sLwtTopic.c_str(), 0, true, oConfigData.acMqttLastWillMessage);
   
-  pinMode(CONFIG_CONTACT_PIN, INPUT);
-  bContact = !digitalRead(CONFIG_CONTACT_PIN);
+  pinMode(oConfigData.ucContactPin, INPUT);
+  bContact = !digitalRead(oConfigData.ucContactPin);
   
   vConnectWifi();
   vConnectMqtt();  
@@ -47,7 +72,7 @@ void setup() {
 
 void loop() {
   // put your main code here, to run repeatedly:
-  if(millis()-ulWaitStartTime > CONFIG_MQTT_TO)
+  if(millis()-ulWaitStartTime > oConfigData.uiMqttTimeout)
   {
     DEBUG_L1(Serial.println("Going to deepsleep."));
     ESP.deepSleep(0);
@@ -59,13 +84,13 @@ void vConnectWifi()
 {
   DEBUG_L1(Serial.println("Connecting WiFi..."));
   
-  WiFi.hostname(CONFIG_CLIENT_ID);  
+  WiFi.hostname(oConfigData.acMqttClientId);  
   WiFi.mode(WIFI_STA);
-  WiFi.begin(CONFIG_WIFI_SSID, CONFIG_WIFI_PASS);
+  WiFi.begin(oConfigData.acWifiSSID, oConfigData.acWifiPassword);
   ulWaitStartTime = millis();
   while (WiFi.status() != WL_CONNECTED) 
   {  
-    if(millis()-ulWaitStartTime > CONFIG_WIFI_TO)
+    if(millis()-ulWaitStartTime > oConfigData.uiWifiTimeout)
     {      
       DEBUG_L1(Serial.println("Going to deepsleep."));
       ESP.deepSleep(0);
@@ -85,7 +110,7 @@ void vConnectMqtt()
   oMqtt->onDisconnected(vDisconnectedCb);
   oMqtt->onPublished(vPublishedCb);
   oMqtt->onData(vDataCb);
-  oMqtt->setUserPwd(CONFIG_MQTT_LOGIN, CONFIG_MQTT_PASS);
+  oMqtt->setUserPwd(oConfigData.acMqttLogin, oConfigData.acMqttPassword);
   ulWaitStartTime = millis();
   oMqtt->connect();
 }
@@ -95,16 +120,16 @@ String sFormatMessage()
   String sDuration(millis()-ulStartupTime);
 
   #ifdef CONFIG_CONTACT_NC
-  String sContact = CONFIG_CONTACT_MSG_OPEN;
+  String sContact = oConfigData.acContactMessageOpen;
   if(bContact)
   {
-    sContact = CONFIG_CONTACT_MSG_CLOSED;
+    sContact = oConfigData.acContactMessageClosed;
   }
   #else
-  String sContact = CONFIG_CONTACT_MSG_CLOSED;
+  String sContact = oConfigData.acContactMessageClosed;
   if(bContact)
   {
-    sContact = CONFIG_CONTACT_MSG_OPEN;
+    sContact = oConfigData.acContactMessageOpen;
   }
   #endif
 
@@ -131,8 +156,8 @@ void vConnectedCb()
 
   String sMessage = sFormatMessage();
   
-  String sContactTopic(CONFIG_BASE_TOPIC);
-  sContactTopic.concat(CONFIG_CONTACT_TOPIC);
+  String sContactTopic(oConfigData.acMqttBaseTopic);
+  sContactTopic.concat(oConfigData.acMqttContactTopic);
   
   DEBUG_L1(Serial.print(sContactTopic));
   DEBUG_L1(Serial.print(": "));
