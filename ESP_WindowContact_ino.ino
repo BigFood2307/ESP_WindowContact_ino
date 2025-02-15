@@ -1,5 +1,5 @@
 #include <ESP8266WiFi.h>
-#include <MQTT.h>
+#include <PubSubClient.h>
 
 #include "user_config_defaults.h"
 #include "version.h"
@@ -8,12 +8,12 @@
 #define DEBUG_LEVEL 0
 #include "debugtool.h"
 
-void vDataCb(String& asTopic, String& asData);
 void vPublishedCb();
 void vDisconnectedCb();
 void vConnectedCb();
 
-MQTT *oMqtt;
+WiFiClient oWifiClient;
+PubSubClient oMqtt(oWifiClient);
 
 struct
 {
@@ -57,11 +57,6 @@ void setup() {
 
   vInitPermanentConfig(CONFIG_HOLDER, sizeof(oConfigData));
   vLoadConfig((void *)(&oConfigData));
-
-  String sLwtTopic(oConfigData.acMqttBaseTopic);
-  sLwtTopic.concat(oConfigData.acMqttLastWillTopic);
-  
-  oMqtt = new MQTT(oConfigData.acMqttClientId, oConfigData.acMqttServer, oConfigData.uiMqttPort, sLwtTopic.c_str(), 0, true, oConfigData.acMqttLastWillMessage);
   
   pinMode(oConfigData.ucContactPin, INPUT);
   bContact = !digitalRead(oConfigData.ucContactPin);
@@ -104,15 +99,34 @@ void vConnectWifi()
 }
 
 void vConnectMqtt()
-{
+{    
   DEBUG_L1(Serial.println("Connecting MQTT..."));
-  oMqtt->onConnected(vConnectedCb);
-  oMqtt->onDisconnected(vDisconnectedCb);
-  oMqtt->onPublished(vPublishedCb);
-  oMqtt->onData(vDataCb);
-  oMqtt->setUserPwd(oConfigData.acMqttLogin, oConfigData.acMqttPassword);
+  
+  String sLwtTopic(oConfigData.acMqttBaseTopic);
+  sLwtTopic.concat(oConfigData.acMqttLastWillTopic);
+  
+  oMqtt.setServer(oConfigData.acMqttServer, oConfigData.uiMqttPort);
   ulWaitStartTime = millis();
-  oMqtt->connect();
+
+  while (!oMqtt.connected()) {
+    if (oMqtt.connect(oConfigData.acMqttClientId, oConfigData.acMqttLogin, oConfigData.acMqttPassword, sLwtTopic.c_str(), 0, true, oConfigData.acMqttLastWillMessage)) {
+      vConnectedCb();
+    } else {
+      DEBUG_L1(Serial.print("failed, rc="));
+      DEBUG_L1(Serial.print(client.state()));
+      if((millis() - ulWaitStartTime) >= oConfigData.uiMqttTimeout)
+      {
+        DEBUG_L1(Serial.println());
+        DEBUG_L1(Serial.println("MQTT TO"));
+        DEBUG_L1(Serial.println("Going to deepsleep"));
+        ESP.deepSleep(0);
+      }
+      DEBUG_L1(Serial.println(" try again in 0.2 seconds"));
+      // Wait 0.2 seconds before retrying
+      delay(200);
+    }
+  }
+  
 }
 
 String sFormatMessage()
@@ -164,27 +178,13 @@ void vConnectedCb()
   DEBUG_L1(Serial.println(sMessage));
 
   // publish value to topic
-  boolean bResult = oMqtt->publish(sContactTopic.c_str(), sMessage, 1, 1);
-}
+  boolean bResult = oMqtt.publish(sContactTopic.c_str(), sMessage.c_str(), true);
 
-void vDisconnectedCb()
-{
-  //Serial.println("disconnected. try to reconnect...");
-  DEBUG_L1(Serial.println("Going to deepsleep."));
-  ESP.deepSleep(0);
+  vPublishedCb();
 }
 
 void vPublishedCb()
 {
-  //Serial.print("Publishing took ms: ");
-  //Serial.println(millis() - milli);
   DEBUG_L1(Serial.println("Going to deepsleep."));
   ESP.deepSleep(0);
-}
-
-void vDataCb(String& asTopic, String& asData)
-{  
-  //Serial.print(topic);
-  //Serial.print(": ");
-  //Serial.println(data);
 }
