@@ -78,16 +78,31 @@ void loop() {
 void vConnectWifi()
 {
   DEBUG_L1(Serial.println("Connecting WiFi..."));
-  
-  WiFi.hostname(oConfigData.acMqttClientId);  
-  WiFi.mode(WIFI_STA);
-  WiFi.begin(oConfigData.acWifiSSID, oConfigData.acWifiPassword);
+
+  if (WiFi.SSID() != oConfigData.acWifiSSID)
+  {
+    WiFi.hostname(oConfigData.acMqttClientId);  
+    WiFi.mode(WIFI_STA);
+    WiFi.begin(oConfigData.acWifiSSID, oConfigData.acWifiPassword);
+    WiFi.persistent(true);
+    WiFi.setAutoConnect(true);
+    WiFi.setAutoReconnect(true);
+    DEBUG_L1(Serial.println(WiFi.status()));
+  }
+  else
+  {
+    DEBUG_L1(Serial.println("Setup still valid."));
+    DEBUG_L1(Serial.println(WiFi.status()));
+    WiFi.begin();
+  }
   ulWaitStartTime = millis();
   while (WiFi.status() != WL_CONNECTED) 
   {  
     if(millis()-ulWaitStartTime > oConfigData.uiWifiTimeout)
     {      
       DEBUG_L1(Serial.println("Going to deepsleep."));
+      WiFi.begin(oConfigData.acWifiSSID, oConfigData.acWifiPassword);
+      delay(1000);
       ESP.deepSleep(0);
     }
     DEBUG_L4(Serial.print("."));
@@ -113,7 +128,7 @@ void vConnectMqtt()
       vConnectedCb();
     } else {
       DEBUG_L1(Serial.print("failed, rc="));
-      DEBUG_L1(Serial.print(client.state()));
+      DEBUG_L1(Serial.print(oMqtt.state()));
       if((millis() - ulWaitStartTime) >= oConfigData.uiMqttTimeout)
       {
         DEBUG_L1(Serial.println());
@@ -179,6 +194,7 @@ void vConnectedCb()
 
   // publish value to topic
   boolean bResult = oMqtt.publish(sContactTopic.c_str(), sMessage.c_str(), true);
+  delay(100);
 
   vPublishedCb();
 }
